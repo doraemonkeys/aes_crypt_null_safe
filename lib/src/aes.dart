@@ -1201,6 +1201,8 @@ class _Aes {
           block16 = Uint8List.fromList(t);
         }
         break;
+      default:
+        throw AesCryptArgumentError('Invalid AES mode.');
     }
     return encData;
   }
@@ -1272,6 +1274,8 @@ class _Aes {
       case AesMode.ofb:
         decData = aesEncrypt(data);
         break;
+      default:
+        throw AesCryptArgumentError('Invalid AES mode.');
     }
     return decData;
   }
@@ -1531,5 +1535,64 @@ class _Aes {
           _sBox[temp]; // add the substituted byte back
     }
     return w;
+  }
+}
+
+Uint8List PKCS5Padding(Uint8List plainText, int blockSize) {
+  int padding = blockSize - (plainText.length % blockSize);
+  Uint8List padText = Uint8List(padding);
+  padText.fillRange(0, padding, padding);
+  Uint8List newText = Uint8List(plainText.length + padding);
+  newText.setRange(0, plainText.length, plainText);
+  newText.setRange(plainText.length, plainText.length + padding, padText);
+  return newText;
+}
+
+Uint8List PKCS5UnPadding(Uint8List plainText) {
+  int padding = plainText[plainText.length - 1];
+  return plainText.sublist(0, plainText.length - padding);
+}
+
+class CbcAESCrypt {
+  Uint8List _secretKey;
+  var crypt = AesCrypt();
+
+  CbcAESCrypt._(this._secretKey);
+
+  factory CbcAESCrypt.fromHex(String hexSecretKey) {
+    final secretKey = hex.decode(hexSecretKey);
+    if (secretKey.length != 16 &&
+        secretKey.length != 24 &&
+        secretKey.length != 32) {
+      throw ArgumentError('HexSecretKey length must be 32, 48 or 64');
+    }
+    var Uint8SecretKey = Uint8List.fromList(secretKey);
+    return CbcAESCrypt._(Uint8SecretKey);
+  }
+
+  Uint8List encrypt(Uint8List plainText) {
+    AesMode mode = AesMode.cbc;
+    var iv = _rand16Byte();
+    crypt.aesSetKeys(this._secretKey, iv);
+    crypt.aesSetMode(mode);
+    plainText = PKCS5Padding(plainText, 16);
+    var encryptedData = crypt.aesEncrypt(plainText);
+    return Uint8List.fromList(encryptedData + iv);
+  }
+
+  Uint8List decrypt(Uint8List cipherText) {
+    AesMode mode = AesMode.cbc;
+    var iv = cipherText.sublist(cipherText.length - 16);
+    var encryptedData = cipherText.sublist(0, cipherText.length - 16);
+    crypt.aesSetKeys(this._secretKey, iv);
+    crypt.aesSetMode(mode);
+    var decryptedData = crypt.aesDecrypt(encryptedData);
+    decryptedData = PKCS5UnPadding(decryptedData);
+    return Uint8List.fromList(decryptedData);
+  }
+
+  Uint8List _rand16Byte() {
+    final bytes = List<int>.generate(16, (_) => Random.secure().nextInt(256));
+    return Uint8List.fromList(bytes);
   }
 }

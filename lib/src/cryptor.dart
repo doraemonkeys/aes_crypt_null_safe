@@ -1,6 +1,7 @@
 part of aes_crypt;
 
 enum _Action { encrypting, decripting }
+
 enum _Data {
   head,
   userdata,
@@ -14,6 +15,7 @@ enum _Data {
   fsmod,
   hmac2
 }
+
 enum _HmacType { HMAC, HMAC1, HMAC2 }
 
 extension _HmacTypeExtension on _HmacType {
@@ -1119,17 +1121,16 @@ class _Cryptor {
       _log('ACTUAL HMAC', hash);
       switch (ht) {
         case _HmacType.HMAC1:
-          throw AesCryptDataException(
+          throw const AesCryptDataException(
               'Failed to validate the integrity of encryption keys. Incorrect password or corrupted file.');
-          break;
+
         case _HmacType.HMAC2:
-          throw AesCryptDataException(
+          throw const AesCryptDataException(
               'Failed to validate the integrity of encrypted data. The file is corrupted.');
-          break;
+
         case _HmacType.HMAC:
-          throw AesCryptDataException(
+          throw const AesCryptDataException(
               'Failed to validate the integrity of decrypted data. Incorrect password or corrupted file.');
-          break;
       }
     }
   }
@@ -1358,6 +1359,9 @@ class _Cryptor {
         }
         //File(destFilePath).deleteSync();
         break;
+      default:
+        throw AesCryptException('Unknown overwrite mode: $_owMode',
+            AesCryptExceptionType.destFileExists);
     }
 
     return destFilePath;
@@ -1390,6 +1394,9 @@ class _Cryptor {
         }
         //await File(destFilePath).delete();
         break;
+      default:
+        throw AesCryptException('Unknown overwrite mode $_owMode.',
+            AesCryptExceptionType.destFileExists);
     }
 
     return destFilePath;

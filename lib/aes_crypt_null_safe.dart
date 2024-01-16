@@ -12,6 +12,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'dart:async';
+import 'package:convert/convert.dart';
 
 part 'src/aescrypt.dart';
 part 'src/cryptor.dart';
